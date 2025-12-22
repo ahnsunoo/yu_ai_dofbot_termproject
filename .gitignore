@@ -1,0 +1,15 @@
+# catkin build artifacts
+build/
+devel/
+
+# catkin workspace marker
+.catkin_workspace
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db

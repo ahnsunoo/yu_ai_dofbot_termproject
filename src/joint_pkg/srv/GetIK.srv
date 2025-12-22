@@ -1,0 +1,6 @@
+# Request (요청): 목표 위치(xyz)와 자세(quat)
+geometry_msgs/Pose target_pose
+---
+# Response (응답): 계산된 관절 각도와 성공 여부
+float32[] joint_angles
+bool success

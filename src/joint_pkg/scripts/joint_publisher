@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+import rospy
+from std_msgs.msg import Float32MultiArray
+from Arm_Lib import Arm_Device
+import time
+
+def dofbot_publisher():
+    # 1. 노드 초기화
+    rospy.init_node('dofbot_angle_reader', anonymous=False)
+    
+    # 2. 퍼블리셔 설정
+    # 토픽 이름: /dofbot/current_angles
+    # 메시지 타입: Float32MultiArray (리스트 형태의 데이터를 보낼 때 사용)
+    pub = rospy.Publisher('/dofbot/current_angles', Float32MultiArray, queue_size=10)
+    
+    # 3. 주기 설정 (10Hz = 0.1초마다 실행)
+    # I2C 통신 속도를 고려하여 너무 빠르지 않게 설정합니다.
+    rate = rospy.Rate(10) 
+    
+    # 4. 로봇 팔 객체 생성
+    Arm = Arm_Device()
+    rospy.loginfo("DOFbot Angle Reader Node Started.")
+
+    while not rospy.is_shutdown():
+        try:
+            current_angles = []
+            read_success = True
+
+            # 5. 1번부터 6번 모터까지 순차적으로 각도 읽기
+            for i in range(1, 7):
+                angle = Arm.Arm_serial_servo_read(i)
+                
+                # 읽기 실패(None) 시 이번 루프는 건너뛰거나 재시도해야 함
+                if angle is None:
+                    rospy.logwarn(f"Failed to read servo ID: {i}")
+                    read_success = False
+                    break
+                
+                current_angles.append(float(angle))
+
+            # 6. 6개 모두 성공적으로 읽었을 때만 발행
+            if read_success and len(current_angles) == 6:
+                # 메시지 객체 생성 및 데이터 할당
+                msg = Float32MultiArray()
+                msg.data = current_angles
+                
+                # 토픽 발행
+                pub.publish(msg)
+                
+                # (선택) 터미널에 로그 출력
+                # rospy.loginfo(f"Published: {current_angles}")
+            
+        except Exception as e:
+            rospy.logerr(f"Error: {e}")
+
+        # 지정된 주기만큼 대기
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        dofbot_publisher()
+    except rospy.ROSInterruptException:
+        pass
